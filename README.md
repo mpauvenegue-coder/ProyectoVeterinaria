@@ -1,30 +1,48 @@
 # Proyecto Veterinaria API
 
-API REST desarrollada con **Django** y **Django REST Framework** para gestionar propietarios, veterinarios, servicios, citas y pagos de una veterinaria.
+API REST desarrollada con Django y Django REST Framework para gestionar propietarios, veterinarios, servicios, citas y pagos de una veterinaria.
 
-El proyecto **no requiere frontend**: sus funcionalidades se pueden probar mediante **Postman** y pruebas automatizadas.
+El proyecto no requiere frontend. Las funcionalidades se prueban mediante Postman y pruebas automatizadas de Django.
 
 ## Requisitos
 
 - Python instalado.
-- MySQL instalado y en ejecución, con permisos para crear una base de datos.
-- Dependencias especificadas en `requirements.txt` (Django 5.2.17, Django REST Framework 3.16.1, python-dotenv 1.2.1 y PyMySQL 1.1.2, según la configuración del proyecto).
+- MySQL instalado y en funcionamiento.
+- Dependencias especificadas en `requirements.txt`:
+  - Django 5.2.17
+  - Django REST Framework 3.16.1
+  - python-dotenv 1.2.1
+  - PyMySQL 1.1.2
+- Credenciales locales para acceder a MySQL y crear la base de datos.
 
-## Instalación desde cero (Windows y PowerShell)
+## Instalación desde cero
 
-Abrir PowerShell en la carpeta del proyecto, donde se encuentra `manage.py`, y ejecutar:
+Las siguientes instrucciones están dirigidas a Windows utilizando PowerShell.
+
+### 1. Crear y activar el entorno virtual
+
+Abrir PowerShell en la carpeta principal del proyecto, donde se encuentra `manage.py`, y ejecutar:
 
 ```powershell
 py -m venv .venv
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+```
+
+### 2. Configurar las variables de entorno
+
+Crear el archivo `.env` a partir de `.env.example`:
+
+```powershell
 Copy-Item .env.example .env
 ```
 
-Editar `.env` con la configuración local. **Nunca publicar `.env` en GitHub.** Las siguientes variables muestran valores de ejemplo, no credenciales reales:
+Editar `.env` con las credenciales correspondientes a la instalación local de MySQL.
 
-```dotenv
+Ejemplo de configuración:
+
+```env
 SECRET_KEY=cambiar-por-una-clave-local
 DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
@@ -36,136 +54,334 @@ DB_HOST=127.0.0.1
 DB_PORT=3306
 ```
 
-Crear la base de datos en MySQL, por ejemplo desde MySQL Workbench:
+**Importante:** el archivo `.env` contiene información privada y no debe subirse a GitHub. El archivo `.env.example` debe incluir únicamente valores de ejemplo.
+
+### 3. Crear la base de datos
+
+Desde MySQL Workbench o una consola de MySQL, ejecutar:
 
 ```sql
-CREATE DATABASE veterinaria_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE veterinaria_db
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 ```
 
-Aplicar las migraciones incluidas en el repositorio y crear un superusuario:
+### 4. Aplicar las migraciones
+
+Con el entorno virtual activado, ejecutar:
 
 ```powershell
 python manage.py migrate
+```
+
+Este comando crea las tablas correspondientes a las migraciones incluidas en el proyecto.
+
+### 5. Crear un superusuario
+
+```powershell
 python manage.py createsuperuser
 ```
 
-Opcionalmente, cargar datos ficticios, grupos y usuarios de demostración:
+Seguir las instrucciones de la consola para establecer el usuario y la contraseña.
+
+### 6. Cargar datos de demostración (opcional)
 
 ```powershell
 python manage.py preparar_demo
 ```
 
-> **Seguridad:** `preparar_demo` crea usuarios de ejemplo con contraseñas conocidas y tokens de prueba. Utilizarlo **únicamente en una base local de demostración**, nunca en un servidor público. No publicar contraseñas ni tokens reales.
+Este comando permite preparar datos ficticios, usuarios, grupos y tokens para realizar pruebas.
 
-Iniciar el servidor:
+**Advertencia:** los usuarios de demostración utilizan credenciales conocidas. Deben emplearse únicamente en un entorno local de desarrollo y nunca en un servidor público.
+
+### 7. Iniciar el servidor
 
 ```powershell
 python manage.py runserver
 ```
 
-- Servidor local: http://127.0.0.1:8000/
+Direcciones principales:
+
+- API: http://127.0.0.1:8000/
 - Panel de administración: http://127.0.0.1:8000/admin/
+
+## Módulos del proyecto
+
+La API está organizada en cinco módulos principales.
+
+### 1. Propietarios
+
+Permite administrar la información de los propietarios responsables de las mascotas.
+
+Incluye datos de identificación, nombre, teléfono, correo electrónico y estado.
+
+### 2. Veterinarios
+
+Gestiona la información de los profesionales veterinarios que prestan servicios.
+
+### 3. Servicios
+
+Administra los servicios ofrecidos por la veterinaria, incluyendo su tipo, precio, cupos disponibles y veterinario asignado.
+
+### 4. Citas
+
+Permite registrar y gestionar las citas veterinarias.
+
+Cada cita contiene información del propietario, nombre y especie de la mascota, fecha, estado y servicios solicitados.
+
+Los servicios se relacionan con las citas mediante el modelo `DetalleCita`, que permite asociar varios servicios a una misma cita.
+
+El sistema contempla el cálculo del total de la cita, los pagos realizados y el saldo pendiente.
+
+### 5. Pagos
+
+Permite registrar y consultar los pagos asociados a las citas veterinarias.
+
+Una cita puede tener varios pagos.
+
+### Relaciones principales
+
+- Un propietario puede tener varias citas.
+- Un veterinario puede estar asociado a varios servicios.
+- Una cita puede incluir varios servicios.
+- Un servicio puede aparecer en diferentes citas.
+- Una cita puede registrar varios pagos.
+
+La relación entre citas y servicios se administra mediante `DetalleCita`.
+
+El proyecto no incluye un modelo independiente de mascota ni un expediente médico.
+
+## Endpoints de la API
+
+### Autenticación y sesión
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | `/api/token/` | Obtener token de autenticación |
+| GET | `/api/perfil/` | Consultar el perfil autenticado |
+| GET | `/api/sesion/` | Consultar información de sesión |
+
+### Propietarios
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/propietarios/` | Listar propietarios |
+| POST | `/api/propietarios/` | Crear propietario |
+| GET | `/api/propietarios/<id>/` | Consultar propietario |
+| PUT | `/api/propietarios/<id>/` | Actualizar propietario |
+| PATCH | `/api/propietarios/<id>/` | Actualizar parcialmente |
+| DELETE | `/api/propietarios/<id>/` | Eliminar propietario |
+
+### Veterinarios
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/veterinarios/` | Listar veterinarios |
+| POST | `/api/veterinarios/` | Crear veterinario |
+| GET | `/api/veterinarios/<id>/` | Consultar veterinario |
+| PUT | `/api/veterinarios/<id>/` | Actualizar veterinario |
+| PATCH | `/api/veterinarios/<id>/` | Actualizar parcialmente |
+| DELETE | `/api/veterinarios/<id>/` | Eliminar veterinario |
+
+### Servicios
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/servicios/` | Listar servicios |
+| POST | `/api/servicios/` | Crear servicio |
+| GET | `/api/servicios/<id>/` | Consultar servicio |
+| PUT | `/api/servicios/<id>/` | Actualizar servicio |
+| PATCH | `/api/servicios/<id>/` | Actualizar parcialmente |
+| DELETE | `/api/servicios/<id>/` | Eliminar servicio |
+
+### Citas
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/citas/` | Listar citas |
+| POST | `/api/citas/` | Crear cita |
+| GET | `/api/citas/<id>/` | Consultar cita |
+| PUT | `/api/citas/<id>/` | Actualizar cita |
+| PATCH | `/api/citas/<id>/` | Actualizar parcialmente |
+| DELETE | `/api/citas/<id>/` | Eliminar cita |
+| GET | `/api/citas/<id>/detalles/` | Listar servicios de una cita |
+| POST | `/api/citas/<id>/detalles/` | Agregar servicios a una cita |
+| GET | `/api/citas/detalles/<id>/` | Consultar detalle |
+| PUT | `/api/citas/detalles/<id>/` | Actualizar detalle |
+| PATCH | `/api/citas/detalles/<id>/` | Actualizar parcialmente |
+| DELETE | `/api/citas/detalles/<id>/` | Eliminar detalle |
+
+### Pagos
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/pagos/` | Listar pagos |
+| POST | `/api/pagos/` | Registrar pago |
+| GET | `/api/pagos/<id>/` | Consultar pago |
+| PUT | `/api/pagos/<id>/` | Actualizar pago |
+| PATCH | `/api/pagos/<id>/` | Actualizar parcialmente |
+| DELETE | `/api/pagos/<id>/` | Eliminar pago |
+
+### Reportes
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/reportes/resumen/` | Resumen general de la veterinaria |
+| GET | `/api/reportes/propietarios-atenciones/` | Reporte de atenciones por propietario |
+| GET | `/api/reportes/servicios-bajo-cupos/` | Servicios con pocos cupos |
+| GET | `/api/reportes/citas-propietario/<id>/` | Citas de un propietario |
+| GET | `/api/reportes/servicios-veterinario/<id>/` | Servicios por veterinario |
+
+## Filtros, búsqueda, ordenamiento y paginación
+
+La API incorpora mecanismos para consultar información mediante filtros, búsquedas, ordenamiento y paginación, según el recurso.
+
+Ejemplos:
+
+**Consultar citas pendientes de un propietario:**
+
+```http
+GET /api/citas/?estado=PENDIENTE&propietario=1&page=1
+```
+
+**Consultar servicios por tipo y veterinario, ordenados por precio:**
+
+```http
+GET /api/servicios/?tipo=Consulta&veterinario=1&ordering=precio&page=1
+```
+
+**Buscar propietarios:**
+
+```http
+GET /api/propietarios/?buscar=Maria&page=1
+```
+
+## Roles y permisos
+
+El sistema contempla tres perfiles de usuario.
+
+| Perfil | Consultar | Crear | Modificar | Eliminar |
+|---|---|---|---|---|
+| Administrador | Sí | Sí | Sí | Sí |
+| Recepcionista | Sí | Sí | Sí | No |
+| Consulta | Sí | No | No | No |
+
+Los usuarios sin autenticación no pueden acceder a los recursos protegidos.
+
+La autorización depende de los permisos de Django asignados a cada usuario o grupo.
+
+La matriz detallada de permisos se encuentra en la documentación técnica del proyecto.
 
 ## Pruebas automatizadas
 
-Ejecutar:
+Para ejecutar las pruebas de Django:
 
 ```powershell
 python manage.py test
 ```
 
-El proyecto contempla **19 pruebas automatizadas en `citas/tests.py`**. La ejecución y sus resultados deben verificarse en el entorno configurado y conservarse como evidencia mediante una captura o registro de consola.
+El proyecto contempla 19 pruebas automatizadas en `citas/tests.py`, destinadas a verificar el comportamiento de la API, sus validaciones y permisos.
+
+La ejecución debe realizarse en un entorno correctamente configurado. Los resultados reales de la consola deben conservarse como evidencia de las pruebas realizadas.
 
 ## Pruebas con Postman
 
-Importar en Postman los archivos:
+El proyecto contempla una colección de 20 solicitudes para comprobar el funcionamiento de los endpoints.
+
+Archivos de referencia:
 
 - `postman/VeterinariaAPI.postman_collection.json`
 - `postman/VeterinariaAPI.postman_environment.json`
 
-Seleccionar el entorno importado. La colección contempla **20 solicitudes**, con respuestas esperadas y comprobaciones de códigos HTTP.
+### Procedimiento
 
-Para reproducir las pruebas:
+1. Iniciar el servidor Django.
+2. Importar la colección y el entorno en Postman.
+3. Seleccionar el entorno correspondiente.
+4. Configurar las variables locales necesarias.
+5. Preparar los datos de demostración si se requiere.
+6. Ejecutar las solicitudes en el orden establecido.
+7. Revisar los códigos HTTP y las respuestas obtenidas.
 
-1. Preparar una base de datos local de desarrollo y ejecutar `python manage.py preparar_demo`.
-2. Verificar los identificadores reales de propietario y veterinario, y configurar las variables `propietario_demo_id` y `veterinario_demo_id` según corresponda.
-3. Configurar localmente `clave_admin`, `clave_recepcionista` y `clave_consulta` con las contraseñas de demostración.
-4. Ejecutar las solicitudes en orden, de la **01 a la 20**. Las solicitudes 01 a 03 obtienen los tokens de los tres perfiles; las solicitudes de creación pueden guardar identificadores para operaciones posteriores.
-5. Revisar el código HTTP y el contenido de cada respuesta.
+Las solicitudes incluyen operaciones CRUD, autenticación, permisos, filtros, reportes y validaciones de reglas de negocio.
 
-Para las rutas protegidas se utiliza el encabezado:
+Los códigos HTTP contemplados incluyen:
 
-```http
-Authorization: Token <token>
-```
+- `200 OK`: operación o consulta exitosa.
+- `201 Created`: recurso creado correctamente.
+- `204 No Content`: eliminación exitosa cuando está permitida.
+- `400 Bad Request`: datos inválidos.
+- `401 Unauthorized`: falta de autenticación.
+- `403 Forbidden`: usuario sin permisos suficientes.
+- `404 Not Found`: recurso inexistente.
+- `409 Conflict`: operación rechazada por un conflicto con las reglas del sistema.
 
-> **Importante:** No exportar ni compartir el entorno después de introducir contraseñas o tokens reales. Si se repite la colección, pueden producirse conflictos por identificaciones, códigos o registros ya existentes. Algunas solicitudes dependen de datos creados previamente y de los identificadores usados en las pruebas; ajustar los valores o reiniciar los datos de prueba cuando sea necesario.
+### Consideraciones de seguridad
 
-## Módulos y funcionamiento
+No deben publicarse contraseñas ni tokens reales en los archivos exportados de Postman.
 
-1. **Propietarios:** registra la información del responsable de la mascota.
-2. **Veterinarios:** administra los profesionales que prestan servicios.
-3. **Servicios:** gestiona los servicios ofrecidos, sus precios, cupos y la asignación de veterinarios.
-4. **Citas:** registra al propietario, los datos básicos de la mascota, la fecha, el estado y los servicios solicitados mediante `DetalleCita`.
-5. **Pagos:** registra los abonos asociados a las citas.
+Las solicitudes de autenticación pueden almacenar tokens en variables del entorno para utilizarse en las peticiones posteriores.
 
-Una cita puede incluir varios servicios y un mismo servicio puede formar parte de distintas citas, mediante `DetalleCita`. La información de la cita permite calcular el total, el monto pagado y el saldo pendiente.
+Si se repiten las pruebas, pueden producirse conflictos por identificaciones, códigos o registros creados anteriormente. En ese caso, deben utilizarse nuevos datos de prueba o restablecerse los registros correspondientes.
 
-**Alcance:** no se incluye un modelo independiente de mascota ni un expediente médico.
+## Reglas de negocio y validaciones
 
-## Endpoints
+El sistema incorpora validaciones destinadas a mantener la integridad de la información.
 
-| Método | Ruta | Función |
-|---|---|---|
-| POST | `/api/token/` | Obtener token de autenticación |
-| GET | `/api/perfil/` | Consultar el perfil autenticado |
-| GET | `/api/sesion/` | Consultar información de sesión |
-| GET, POST | `/api/propietarios/` | Listar y crear propietarios |
-| GET, PUT, PATCH, DELETE | `/api/propietarios/<id>/` | Consultar, editar y eliminar un propietario |
-| GET, POST | `/api/veterinarios/` | Listar y crear veterinarios |
-| GET, PUT, PATCH, DELETE | `/api/veterinarios/<id>/` | Consultar, editar y eliminar un veterinario |
-| GET, POST | `/api/servicios/` | Listar y crear servicios |
-| GET, PUT, PATCH, DELETE | `/api/servicios/<id>/` | Consultar, editar y eliminar un servicio |
-| GET, POST | `/api/citas/` | Listar y crear citas |
-| GET, PUT, PATCH, DELETE | `/api/citas/<id>/` | Consultar, editar y eliminar una cita |
-| GET, POST | `/api/citas/<id>/detalles/` | Listar y agregar servicios a una cita |
-| GET, PUT, PATCH, DELETE | `/api/citas/detalles/<id>/` | Consultar, editar y eliminar un detalle |
-| GET, POST | `/api/pagos/` | Listar y registrar pagos |
-| GET, PUT, PATCH, DELETE | `/api/pagos/<id>/` | Consultar, editar y eliminar un pago |
-| GET | `/api/reportes/resumen/` | Consultar el resumen general |
-| GET | `/api/reportes/propietarios-atenciones/` | Consultar el reporte de atenciones por propietario |
-| GET | `/api/reportes/servicios-bajo-cupos/` | Consultar servicios con pocos cupos |
-| GET | `/api/reportes/citas-propietario/<id>/` | Consultar citas por propietario |
-| GET | `/api/reportes/servicios-veterinario/<id>/` | Consultar servicios por veterinario |
+Estas reglas se aplican a las operaciones correspondientes y pueden generar respuestas de error cuando los datos no cumplen las condiciones establecidas.
 
-Los listados admiten filtros, búsqueda, ordenamiento y/o paginación, según el recurso. Por ejemplo:
+Entre los escenarios contemplados se encuentran:
 
-```http
-GET /api/citas/?estado=PENDIENTE&propietario=1&page=1
-GET /api/servicios/?tipo=Consulta&veterinario=1&ordering=precio&page=1
-```
+- Validación de datos obligatorios.
+- Control de valores inválidos.
+- Verificación de relaciones entre registros.
+- Restricciones de eliminación cuando existen registros asociados.
+- Control de acceso según el perfil del usuario.
 
-## Roles y permisos
-
-- **Administrador:** puede consultar, crear, modificar y eliminar, de acuerdo con los permisos configurados.
-- **Recepcionista:** puede consultar, crear y modificar; no eliminar.
-- **Consulta:** acceso de solo lectura.
-- **Sin autenticación:** acceso denegado a los recursos protegidos.
-
-Los permisos se gestionan mediante usuarios, grupos y permisos de Django. Para los detalles, consultar la matriz de permisos del documento técnico.
+El detalle de las reglas de negocio y sus códigos HTTP se documenta en el documento técnico.
 
 ## Limitaciones conocidas
 
-- No incluye frontend, expediente médico ni agenda con verificación automática de horarios.
-- `cupos` representa unidades disponibles de atención por servicio, no productos físicos.
-- Cada equipo debe configurar sus propias credenciales y conexión local con MySQL.
-- Las pruebas de Postman y las automatizadas deben ejecutarse en el entorno correspondiente; este README no sustituye la evidencia de ejecución.
-- Los aportes individuales, commits, revisiones y Pull Requests deben reflejar el trabajo real de los integrantes.
+- No incluye una interfaz gráfica o frontend.
+- No contempla un expediente médico independiente.
+- No dispone de un modelo separado para mascotas.
+- No implementa una agenda con comprobación automática de disponibilidad horaria.
+- Los cupos representan unidades disponibles de atención por servicio.
+- La configuración de MySQL y las credenciales deben establecerse en cada equipo.
+- Las pruebas deben ejecutarse en un entorno configurado para obtener evidencia válida.
+
+## Trabajo colaborativo con GitHub
+
+El desarrollo del proyecto se realiza mediante Git y GitHub.
+
+Se utilizan ramas individuales para organizar los aportes de las integrantes y Pull Requests para integrar los cambios en la rama principal `main`.
+
+El historial del repositorio permite consultar los commits, las contribuciones individuales y las integraciones realizadas durante el desarrollo.
 
 ## Documentación técnica
 
-El documento técnico del proyecto, que contempla el diagrama entidad-relación, la matriz de permisos, las reglas de negocio y el catálogo de endpoints, se encuentra en:
+La documentación complementaria del proyecto incluye el diagrama entidad-relación, la matriz de permisos, las reglas de negocio y el catálogo de endpoints.
+
+Archivo de referencia:
 
 `docs/Documento_tecnico.pdf`
 
-> **Nota para la entrega:** verificar que las rutas de los archivos de Postman, el documento técnico, las migraciones y los endpoints coincidan con los archivos y el código de la versión final del repositorio.
+## Tecnologías utilizadas
+
+- Python
+- Django
+- Django REST Framework
+- MySQL
+- PyMySQL
+- python-dotenv
+- Postman
+- Git y GitHub
+
+## Integrantes
+
+- María Paula
+- Daniela
+
+## Observaciones finales
+
+Este proyecto tiene fines académicos y está orientado a demostrar el desarrollo de una API REST mediante Django, la integración con una base de datos relacional, la aplicación de reglas de negocio, el control de permisos y la realización de pruebas automatizadas y manuales.
